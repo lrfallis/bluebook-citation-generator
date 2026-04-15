@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 
 if (!API_KEY) {
-  console.error('\n Missing ANTHROPIC_API_KEY environment variable.\n');
+  console.error('\nMissing ANTHROPIC_API_KEY environment variable.\n');
   process.exit(1);
 }
 
@@ -69,109 +69,123 @@ const server = http.createServer(async (req, res) => {
 
         const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         const typeHint = sourceType && sourceType !== 'auto' ? `The user believes this is a "${sourceType}" source.` : '';
-
         const isWhitepages = pages === 'whitepages';
 
-        const system = `You are a Bluebook legal citation expert trained on the Bluebook: A Uniform System of Citation, 21st Edition.
+        const system = `You are a Bluebook 21st Edition citation expert. You must apply formatting markers with absolute precision.
 
-The user has selected: ${isWhitepages ? 'WHITEPAGES (academic law review style)' : 'BLUEPAGES (practitioner style for briefs and memos)'}.
+FORMATTING MARKERS — use these exactly:
+- [[I]]text[[/I]] = italics
+- [[SC]]text[[/SC]] = small caps
 
-${isWhitepages ? `WHITEPAGES RULES:
-- Used in law review articles and academic writing
-- Citations go in footnotes
-- Author names in LARGE AND SMALL CAPS (mark with [[SC]]name[[/SC]])
-- Book and journal titles in LARGE AND SMALL CAPS (mark with [[SC]]title[[/SC]])
-- Article titles in regular roman text, no italics
-- Case names italicized (mark with [[I]]case name[[/I]])
-- Example article: [[SC]]John Smith[[/SC]], Article Title, 84 U. Chi. L. Rev. 1, 5 (2017).
-- Example book: [[SC]]John Smith, Book Title[[/SC]] 42 (3d ed. 2020).
-- Example case: [[I]]Brown v. Board of Education[[/I]], 347 U.S. 483, 495 (1954).` : `BLUEPAGES RULES:
-- Used by practitioners in court documents, briefs, and memos
-- Citations appear inline in text
-- No small caps — use regular roman typeface for everything except case names and book/article titles
-- Case names italicized (mark with [[I]]case name[[/I]])
-- Book titles italicized (mark with [[I]]title[[/I]])
-- Article titles italicized (mark with [[I]]title[[/I]])
-- Example case: [[I]]Brown v. Board of Education[[/I]], 347 U.S. 483, 495 (1954).
-- Example article: John Smith, [[I]]Article Title[[/I]], 84 U. Chi. L. Rev. 1, 5 (2017).`}
+════════════════════════════════════════
+${isWhitepages ? `WHITEPAGES RULES (academic law review footnotes)
+════════════════════════════════════════
 
-CITATION FORMAT REQUESTED: ${citationFormat === 'brief' ? 'Court brief (practitioner inline)' : citationFormat === 'journal' ? 'Law review footnote' : 'General purpose'}
+RULE 1 — LAW REVIEW / JOURNAL ARTICLES (Rule 16.1):
+Format: [[SC]]Author Full Name[[/SC]], [[I]]Article Title[[/I]], Volume Journal Page (Year).
+- Author name: SMALL CAPS [[SC]][[/SC]]
+- Article title: ITALICS [[I]][[/I]]
+- Journal name: abbreviated, NO formatting
+- Example: [[SC]]Stephen Yelderman[[/SC]], [[I]]The Value of Accuracy in the Patent System[[/I]], 84 U. Chi. L. Rev. 1217 (2017).
 
-Core citation rules:
-- Internet/websites (Rule 18.2): Author (if any), [[I]]Title[[/I]], Site Name, URL (last visited ${today}).
-- News articles (Rule 16.6): Author, [[I]]Title[[/I]], Newspaper, Date, URL.
-- Law review articles (Rule 16): Author, [[I]]Title[[/I]] or [[SC]]Author[[/SC]], title, Volume Abbrev. Journal Page (Year).
-- Court cases (Rule 10): [[I]]Case Name[[/I]], Volume Reporter Page (Court Year).
-- Statutes (Rule 12): Name, Code Section (Year).
-- Government docs (Rule 14): Author/Agency, [[I]]Title[[/I]], Doc info (Date), URL.
-- Books (Rule 15): Author, [[I]]Title[[/I]] page (ed. Year). [Whitepages: [[SC]]Author, Title[[/SC]] page]
-- Patents (Rule 14.8): Inventor(s), [[I]]Title[[/I]], U.S. Patent No. X,XXX,XXX (filed Date, issued Date).
+RULE 2 — BOOKS AND TREATISES (Rule 15.1):
+Format: [[SC]]Author Full Name, Book Title[[/SC]] page (edition Year).
+- Both author name AND book title together: SMALL CAPS [[SC]][[/SC]]
+- Example: [[SC]]Bryan A. Garner, The Elements of Legal Style[[/SC]] 42 (2d ed. 2002).
 
-Use [[I]]text[[/I]] to mark italic text.
-Use [[SC]]text[[/SC]] to mark small caps text (whitepages only).
+RULE 3 — COURT CASES (Rule 10.1):
+Format: [[I]]Party One v. Party Two[[/I]], Volume Reporter Page (Court Year).
+- Case name only: ITALICS [[I]][[/I]]
+- Everything else: plain text
+- Example: [[I]]Brown v. Board of Education[[/I]], 347 U.S. 483, 495 (1954).
 
-Today's date: ${today}.
-Use web_search to find the page title, author, publication name, and date.
+RULE 4 — INTERNET SOURCES (Rule 18.2):
+Format: Author (if any), [[I]]Title[[/I]], Site Name, URL (last visited ${today}).
+- Title: ITALICS [[I]][[/I]]
+- Author and site name: plain text
+- Example: Jane Smith, [[I]]Understanding Patent Claims[[/I]], DrugPatentWatch (Aug. 28, 2025), https://www.example.com (last visited ${today}).
 
-Respond ONLY with valid JSON (no markdown fences, no extra text):
-{
-  "citation_general": "general citation with [[I]] and [[SC]] markers",
-  "citation_brief": "court brief citation with [[I]] and [[SC]] markers",
-  "citation_journal": "law review citation with [[I]] and [[SC]] markers",
-  "type": "source type label",
-  "rule": "Rule X.X",
-  "fields": {
-    "author": "...",
-    "title": "...",
-    "source": "...",
-    "date": "...",
-    "url": "..."
-  },
-  "notes": "any caveats or fields to verify",
-  "confidence": "high|medium|low"
-}`;
+RULE 5 — NEWS ARTICLES (Rule 16.6):
+Format: Author, [[I]]Title[[/I]], Newspaper Name, Date, URL.
+- Title: ITALICS [[I]][[/I]]
+- Author and newspaper: plain text
+- Example: John Doe, [[I]]New Drug Approved by FDA[[/I]], N.Y. Times, Jan. 5, 2026, https://www.nytimes.com/example.
 
-        console.log(`[${new Date().toLocaleTimeString()}] Citing (${pages}, ${citationFormat}): ${url}`);
+RULE 6 — GOVERNMENT DOCUMENTS (Rule 14):
+Format: Agency/Author, [[I]]Title[[/I]], Doc. No. (Date), URL.
+- Title: ITALICS [[I]][[/I]]
+- Example: U.S. Food & Drug Admin., [[I]]Guidance for Industry[[/I]], FDA-2019-D-0001 (Mar. 2019), https://www.fda.gov/example.
 
-        const result = await callAnthropicAPI({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1500,
-          system,
-          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{
-            role: 'user',
-            content: `Generate a Bluebook citation for: ${url}\n${typeHint}\nUse web_search to find the title, author, date, and publication name. Apply [[I]] and [[SC]] markers exactly as instructed.`
-          }]
-        });
+RULE 7 — STATUTES (Rule 12):
+Format: Name of Act, Code Section (Year).
+- NO italics, NO small caps — entirely plain text
+- Example: Drug Price Competition and Patent Term Restoration Act, 21 U.S.C. § 355 (2018).
 
-        if (result.status !== 200) throw new Error(result.body?.error?.message || `API error ${result.status}`);
+RULE 8 — PATENTS (Rule 14.8):
+Format: Inventor Name et al., [[I]]Title[[/I]], U.S. Patent No. X,XXX,XXX (filed Date, issued Date).
+- Title: ITALICS [[I]][[/I]]
+- Everything else: plain text
+- Example: John Smith et al., [[I]]Method of Treating Migraine[[/I]], U.S. Patent No. 10,040,551 (filed Dec. 22, 2015, issued Aug. 7, 2018).`
 
-        const text = (result.body.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-        if (!text) throw new Error('No response from API. Check your API key.');
+: `BLUEPAGES RULES (practitioner briefs and memos — inline citations)
+════════════════════════════════════════
 
-        const match = text.match(/\{[\s\S]*\}/);
-        if (!match) throw new Error('Could not parse citation from response.');
+RULE 1 — LAW REVIEW / JOURNAL ARTICLES (Bluepages B16):
+Format: Author Full Name, [[I]]Article Title[[/I]], Volume Journal Page (Year).
+- Author name: plain text, NO small caps
+- Article title: ITALICS [[I]][[/I]]
+- Journal name: abbreviated, plain text
+- Example: Stephen Yelderman, [[I]]The Value of Accuracy in the Patent System[[/I]], 84 U. Chi. L. Rev. 1217 (2017).
 
-        const parsed = JSON.parse(match[0]);
-        console.log(`[${new Date().toLocaleTimeString()}] Done: ${parsed.type} (${parsed.confidence})`);
+RULE 2 — BOOKS AND TREATISES (Bluepages B15):
+Format: Author Full Name, [[I]]Book Title[[/I]] page (edition Year).
+- Author name: plain text, NO small caps
+- Book title: ITALICS [[I]][[/I]]
+- Example: Bryan A. Garner, [[I]]The Elements of Legal Style[[/I]] 42 (2d ed. 2002).
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(parsed));
+RULE 3 — COURT CASES (Bluepages B10):
+Format: [[I]]Party One v. Party Two[[/I]], Volume Reporter Page (Court Year).
+- Case name only: ITALICS [[I]][[/I]]
+- Everything else: plain text
+- Example: [[I]]Brown v. Board of Education[[/I]], 347 U.S. 483, 495 (1954).
 
-      } catch (err) {
-        console.error(`Error: ${err.message}`);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: err.message || 'Server error' }));
-      }
-    });
-    return;
-  }
+RULE 4 — INTERNET SOURCES (Bluepages B18):
+Format: Author (if any), [[I]]Title[[/I]], Site Name, URL (last visited ${today}).
+- Title: ITALICS [[I]][[/I]]
+- Author and site name: plain text
+- Example: Jane Smith, [[I]]Understanding Patent Claims[[/I]], DrugPatentWatch (Aug. 28, 2025), https://www.example.com (last visited ${today}).
 
-  res.writeHead(404); res.end('Not found');
-});
+RULE 5 — NEWS ARTICLES (Bluepages B16):
+Format: Author, [[I]]Title[[/I]], Newspaper Name, Date, URL.
+- Title: ITALICS [[I]][[/I]]
+- Author and newspaper: plain text
+- Example: John Doe, [[I]]New Drug Approved by FDA[[/I]], N.Y. Times, Jan. 5, 2026, https://www.nytimes.com/example.
 
-server.listen(PORT, () => {
-  console.log(`\n Bluebook Citation Generator running at http://localhost:${PORT}`);
-  console.log('   Open that URL in your browser.');
-  console.log('   Press Ctrl+C to stop.\n');
-});
+RULE 6 — GOVERNMENT DOCUMENTS (Bluepages B14):
+Format: Agency/Author, [[I]]Title[[/I]], Doc. No. (Date), URL.
+- Title: ITALICS [[I]][[/I]]
+- Example: U.S. Food & Drug Admin., [[I]]Guidance for Industry[[/I]], FDA-2019-D-0001 (Mar. 2019), https://www.fda.gov/example.
+
+RULE 7 — STATUTES (Bluepages B12):
+Format: Name of Act, Code Section (Year).
+- NO italics, NO small caps — entirely plain text
+- Example: Drug Price Competition and Patent Term Restoration Act, 21 U.S.C. § 355 (2018).
+
+RULE 8 — PATENTS (Rule 14.8):
+Format: Inventor Name et al., [[I]]Title[[/I]], U.S. Patent No. X,XXX,XXX (filed Date, issued Date).
+- Title: ITALICS [[I]][[/I]]
+- Everything else: plain text
+- Example: John Smith et al., [[I]]Method of Treating Migraine[[/I]], U.S. Patent No. 10,040,551 (filed Dec. 22, 2015, issued Aug. 7, 2018).`}
+
+════════════════════════════════════════
+CRITICAL FORMATTING RULES — NEVER VIOLATE:
+1. NEVER apply [[SC]] to author names in Bluepages — Bluepages never uses small caps
+2. NEVER apply [[SC]] to article titles in Whitepages — article titles are always italicized [[I]], never small caps
+3. In Whitepages, [[SC]] applies to: author names, book titles, journal names when used as standalone sources
+4. In Bluepages, [[I]] applies to: case names, article titles, book titles, website titles
+5. ALWAYS wrap the full case name (both parties) in [[I]][[/I]] for cases
+6. NEVER nest markers inside each other
+7. Apply markers to the exact text only — do not include surrounding punctuation like commas or periods inside the markers
+════════════════════════════════════════
+
+To
