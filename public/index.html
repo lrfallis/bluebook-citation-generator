@@ -13,13 +13,13 @@ header h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
 header p { font-size: 14px; color: #666; }
 .card { background: #fff; border: 1px solid #e5e4e0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
 .section-label { font-size: 11px; font-weight: 600; color: #999; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
-.pages-tabs { display: flex; gap: 0; margin-bottom: 6px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+.pages-tabs { display: flex; margin-bottom: 6px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
 .pages-tab { flex: 1; padding: 10px; font-size: 13px; background: transparent; border: none; cursor: pointer; font-family: inherit; color: #666; transition: all 0.12s; text-align: center; line-height: 1.4; }
 .pages-tab:not(:last-child) { border-right: 1px solid #ddd; }
 .pages-tab.active { background: #1a1a18; color: #fff; font-weight: 500; }
 .pages-tab:hover:not(.active) { background: #f5f4f0; }
 .pages-desc { font-size: 12px; color: #888; margin-bottom: 1.25rem; padding: 8px 10px; background: #f9f8f5; border-radius: 6px; line-height: 1.5; }
-.format-tabs { display: flex; gap: 0; margin-bottom: 6px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+.format-tabs { display: flex; margin-bottom: 6px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
 .format-tab { flex: 1; padding: 8px; font-size: 13px; background: transparent; border: none; cursor: pointer; font-family: inherit; color: #666; transition: all 0.12s; text-align: center; }
 .format-tab:not(:last-child) { border-right: 1px solid #ddd; }
 .format-tab.active { background: #534AB7; color: #fff; font-weight: 500; }
@@ -48,17 +48,19 @@ input::placeholder { color: #bbb; }
 .copy-btn { font-size: 12px; padding: 4px 12px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; font-family: inherit; transition: all 0.15s; }
 .copy-btn:hover { background: #f5f4f0; }
 .citation-box { padding: 1.25rem; border-bottom: 1px solid #eee; }
-.citation-formatted { font-size: 14px; line-height: 2; font-family: Georgia, 'Times New Roman', serif; color: #1a1a18; }
-.citation-formatted i { font-style: italic; }
-.citation-formatted .small-caps { font-variant: small-caps; font-size: 1em; }
-.citation-plain { font-size: 12px; color: #888; margin-top: 8px; font-family: monospace; background: #f9f8f5; padding: 8px 10px; border-radius: 6px; line-height: 1.6; word-break: break-all; }
+.citation-rendered { font-size: 15px; line-height: 2; font-family: Georgia, 'Times New Roman', serif; color: #1a1a18; margin-bottom: 10px; }
+.citation-rendered i { font-style: italic; }
+.citation-rendered .sc { font-variant: small-caps; letter-spacing: 0.02em; }
 .citation-plain-label { font-size: 11px; color: #bbb; margin-bottom: 3px; }
+.citation-plain { font-size: 12px; color: #666; font-family: monospace; background: #f9f8f5; padding: 8px 10px; border-radius: 6px; line-height: 1.6; word-break: break-all; }
 .variants { padding: 1rem 1.25rem; border-bottom: 1px solid #eee; }
 .variants-title { font-size: 11px; color: #999; margin-bottom: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
-.variant { margin-bottom: 10px; }
-.variant-label { font-size: 11px; color: #534AB7; font-weight: 500; margin-bottom: 3px; }
-.variant-text { font-size: 13px; font-family: Georgia, serif; color: #1a1a18; line-height: 1.7; background: #f9f8f5; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: background 0.1s; }
-.variant-text:hover { background: #EEEDFE; }
+.variant { margin-bottom: 12px; }
+.variant-label { font-size: 11px; color: #534AB7; font-weight: 500; margin-bottom: 4px; }
+.variant-rendered { font-size: 13px; font-family: Georgia, serif; color: #1a1a18; line-height: 1.7; background: #f9f8f5; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: background 0.1s; }
+.variant-rendered i { font-style: italic; }
+.variant-rendered .sc { font-variant: small-caps; letter-spacing: 0.02em; }
+.variant-rendered:hover { background: #EEEDFE; }
 .note-box { padding: 10px 1.25rem; background: #FAEEDA; font-size: 12px; color: #633806; line-height: 1.6; }
 .breakdown { padding: 1rem 1.25rem; }
 .breakdown-label { font-size: 11px; color: #999; margin-bottom: 8px; letter-spacing: 0.05em; text-transform: uppercase; }
@@ -80,15 +82,12 @@ footer { text-align: center; font-size: 12px; color: #bbb; margin-top: 2rem; pad
   </header>
 
   <div class="card">
-
     <div class="section-label">Bluebook pages</div>
     <div class="pages-tabs" id="pagesTabs">
       <button class="pages-tab active" data-p="bluepages">Bluepages (practitioners)</button>
       <button class="pages-tab" data-p="whitepages">Whitepages (academics)</button>
     </div>
-    <div class="pages-desc" id="pagesDesc">
-      For lawyers, judges, and legal professionals filing briefs and memos. Uses standard roman typeface. Citations appear inline in text.
-    </div>
+    <div class="pages-desc" id="pagesDesc">For lawyers, judges, and legal professionals filing briefs and memos. Uses standard roman typeface with italics for case names and titles. Citations appear inline in text.</div>
 
     <div class="section-label">Citation format</div>
     <div class="format-tabs" id="formatTabs">
@@ -118,7 +117,7 @@ footer { text-align: center; font-size: 12px; color: #bbb; margin-top: 2rem; pad
     </div>
     <button class="go-btn" id="genBtn" onclick="generate()">Generate citation</button>
     <div class="status" id="status"></div>
-    <div class="tip">All three citation formats will be generated. The formatted citation shows proper italics and small caps styling.</div>
+    <div class="tip">Formatted citation shows proper italics and small caps. Plain text version is available to copy into Word or a brief.</div>
   </div>
 
   <div id="errorBox" style="display:none;" class="error"></div>
@@ -133,8 +132,8 @@ var selFormat = 'general';
 var selPages = 'bluepages';
 
 var pagesDescs = {
-  bluepages: 'For lawyers, judges, and legal professionals filing briefs and memos. Uses standard roman typeface. Citations appear inline in text.',
-  whitepages: 'For law review articles and academic writing. Uses large and small caps for certain sources. Citations appear in footnotes.'
+  bluepages: 'For lawyers, judges, and legal professionals filing briefs and memos. Uses standard roman typeface with italics for case names and titles. Citations appear inline in text.',
+  whitepages: 'For law review articles and academic writing. Uses large and small caps for author names, book titles, and journal names. Citations appear in footnotes.'
 };
 
 document.querySelectorAll('.pages-tab').forEach(function(t) {
@@ -182,7 +181,9 @@ function generate() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url: url, sourceType: selType, citationFormat: selFormat, pages: selPages })
   })
-  .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+  .then(function(res) {
+    return res.json().then(function(data) { return { ok: res.ok, data: data }; });
+  })
   .then(function(r) {
     if (!r.ok || r.data.error) throw new Error(r.data.error || 'Server error');
     setStatus('');
@@ -198,12 +199,29 @@ function generate() {
   });
 }
 
+function applyFormatting(raw) {
+  if (!raw) return '';
+  var s = raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  s = s.replace(/\[\[I\]\](.*?)\[\[\/I\]\]/g, '<i>$1</i>');
+  s = s.replace(/\[\[SC\]\](.*?)\[\[\/SC\]\]/g, '<span class="sc">$1</span>');
+  return s;
+}
+
+function stripMarkers(raw) {
+  if (!raw) return '';
+  return raw.replace(/\[\[I\]\]|\[\[\/I\]\]|\[\[SC\]\]|\[\[\/SC\]\]/g, '');
+}
+
 function renderResult(d, fmt, pages) {
   var conf = d.confidence || 'medium';
   var confColor = conf === 'high' ? '#3B6D11' : conf === 'low' ? '#993C1D' : '#854F0B';
   var fmtLabels = { general: 'General', brief: 'Court Brief', journal: 'Law Review' };
-  var primaryPlain = d['citation_' + fmt] || d.citation || '';
-  var primaryFormatted = d['citation_' + fmt + '_html'] || formatCitation(primaryPlain, pages);
+  var primaryRaw = d['citation_' + fmt] || d.citation_general || d.citation || '';
+  var primaryRendered = applyFormatting(primaryRaw);
+  var primaryPlain = stripMarkers(primaryRaw);
 
   var pagesBadge = pages === 'bluepages'
     ? '<span class="pages-badge-blue">Bluepages</span>'
@@ -229,10 +247,11 @@ function renderResult(d, fmt, pages) {
   if (allVariants.length) {
     variantsHtml = '<div class="variants"><div class="variants-title">Other formats (click to copy)</div>';
     allVariants.forEach(function(v) {
-      var vFormatted = formatCitation(d[v.key] || '', pages);
+      var vRendered = applyFormatting(d[v.key] || '');
+      var vPlain = stripMarkers(d[v.key] || '');
       variantsHtml += '<div class="variant">';
       variantsHtml += '<div class="variant-label">' + v.label + '</div>';
-      variantsHtml += '<div class="variant-text" data-plain="' + esc(d[v.key] || '') + '" onclick="copyVariant(this)">' + vFormatted + '</div>';
+      variantsHtml += '<div class="variant-rendered" data-plain="' + esc(vPlain) + '" onclick="copyVariant(this)">' + vRendered + '</div>';
       variantsHtml += '</div>';
     });
     variantsHtml += '</div>';
@@ -249,12 +268,12 @@ function renderResult(d, fmt, pages) {
         '<div class="meta">' +
           '<span style="font-size:11px;color:' + confColor + ';">' + conf + ' confidence</span>' +
           '<span class="rule-tag">' + esc(d.rule || '') + '</span>' +
-          '<button class="copy-btn" onclick="copyCite(this)">Copy</button>' +
+          '<button class="copy-btn" onclick="copyCite(this)">Copy plain</button>' +
         '</div>' +
       '</div>' +
       '<div class="citation-box">' +
-        '<div class="citation-formatted" id="citeFormatted">' + primaryFormatted + '</div>' +
-        '<div class="citation-plain-label" style="margin-top:10px;">Plain text</div>' +
+        '<div class="citation-rendered">' + primaryRendered + '</div>' +
+        '<div class="citation-plain-label">Plain text (for pasting into Word)</div>' +
         '<div class="citation-plain" id="citeOut">' + esc(primaryPlain) + '</div>' +
       '</div>' +
       variantsHtml +
@@ -266,32 +285,11 @@ function renderResult(d, fmt, pages) {
   document.getElementById('resultArea').style.display = 'block';
 }
 
-function formatCitation(plain, pages) {
-  if (!plain) return '';
-  var result = esc(plain);
-
-  // Italicize case names: text before comma followed by v. pattern, or text before comma at start
-  result = result.replace(/^([A-Z][^,]+\s+v\.\s+[^,]+)/g, '<i>$1</i>');
-
-  // Italicize titles in single quotes (our marker from the API)
-  result = result.replace(/\*([^*]+)\*/g, '<i>$1</i>');
-
-  // For whitepages: apply small caps to author names and journal/book titles
-  if (pages === 'whitepages') {
-    // Small caps for ALL CAPS sequences (author names in whitepages style)
-    result = result.replace(/\b([A-Z]{2,}(?:\s+[A-Z]{2,})*)\b/g, function(match) {
-      return '<span class="small-caps">' + match + '</span>';
-    });
-  }
-
-  return result;
-}
-
 function copyCite(btn) {
   var text = document.getElementById('citeOut').textContent;
   navigator.clipboard.writeText(text).then(function() {
     btn.textContent = 'Copied!';
-    setTimeout(function() { btn.textContent = 'Copy'; }, 1600);
+    setTimeout(function() { btn.textContent = 'Copy plain'; }, 1600);
   });
 }
 
