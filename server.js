@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 
 if (!API_KEY) {
-  console.error('\n❌  Missing ANTHROPIC_API_KEY environment variable.\n');
+  console.error('\n Missing ANTHROPIC_API_KEY environment variable.\n');
   process.exit(1);
 }
 
@@ -64,51 +64,74 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => body += chunk);
     req.on('end', async () => {
       try {
-        const { url, sourceType, citationFormat } = JSON.parse(body);
+        const { url, sourceType, citationFormat, pages } = JSON.parse(body);
         if (!url) { res.writeHead(400); res.end(JSON.stringify({ error: 'Missing url' })); return; }
 
         const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         const typeHint = sourceType && sourceType !== 'auto' ? `The user believes this is a "${sourceType}" source.` : '';
 
-        const formatInstructions = {
-          brief: `FORMAT FOR COURT BRIEF: Use inline citation format suitable for filing in court. Follow Bluebook rules for practitioners (the Bluepages). Use standard abbreviations. For cases include full case name, reporter, page, court, and year. For statutes include the code and section. For internet sources include author, title, site, date, and URL with last visited date.`,
-          journal: `FORMAT FOR LAW REVIEW / ACADEMIC JOURNAL: Use academic law review footnote citation format (the Whitepages). Spell out journal names per Bluebook Table T13. Use large and small caps style notation where indicated. For articles include author name, title in italics, volume, journal abbreviation, first page, and year.`,
-          general: `FORMAT FOR GENERAL USE: Provide a clean, standard Bluebook citation suitable for memos, briefs, or academic work.`
-        };
-
-        const formatNote = formatInstructions[citationFormat] || formatInstructions.general;
+        const isWhitepages = pages === 'whitepages';
 
         const system = `You are a Bluebook legal citation expert trained on the Bluebook: A Uniform System of Citation, 21st Edition.
 
-${formatNote}
+The user has selected: ${isWhitepages ? 'WHITEPAGES (academic law review style)' : 'BLUEPAGES (practitioner style for briefs and memos)'}.
+
+${isWhitepages ? `WHITEPAGES RULES:
+- Used in law review articles and academic writing
+- Citations go in footnotes
+- Author names in LARGE AND SMALL CAPS (mark with [[SC]]name[[/SC]])
+- Book and journal titles in LARGE AND SMALL CAPS (mark with [[SC]]title[[/SC]])
+- Article titles in regular roman text, no italics
+- Case names italicized (mark with [[I]]case name[[/I]])
+- Example article: [[SC]]John Smith[[/SC]], Article Title, 84 U. Chi. L. Rev. 1, 5 (2017).
+- Example book: [[SC]]John Smith, Book Title[[/SC]] 42 (3d ed. 2020).
+- Example case: [[I]]Brown v. Board of Education[[/I]], 347 U.S. 483, 495 (1954).` : `BLUEPAGES RULES:
+- Used by practitioners in court documents, briefs, and memos
+- Citations appear inline in text
+- No small caps — use regular roman typeface for everything except case names and book/article titles
+- Case names italicized (mark with [[I]]case name[[/I]])
+- Book titles italicized (mark with [[I]]title[[/I]])
+- Article titles italicized (mark with [[I]]title[[/I]])
+- Example case: [[I]]Brown v. Board of Education[[/I]], 347 U.S. 483, 495 (1954).
+- Example article: John Smith, [[I]]Article Title[[/I]], 84 U. Chi. L. Rev. 1, 5 (2017).`}
+
+CITATION FORMAT REQUESTED: ${citationFormat === 'brief' ? 'Court brief (practitioner inline)' : citationFormat === 'journal' ? 'Law review footnote' : 'General purpose'}
 
 Core citation rules:
-- Internet/websites (Rule 18.2): Author (if any), Title, Site Name, URL (last visited Month Day, Year).
-- News articles (Rule 16.6): Author, Title, Newspaper, Date, URL.
-- Law review/journal articles (Rule 16): Author, Title, Volume Abbrev. Journal Page (Year).
-- Court cases (Rule 10): Case Name, Volume Reporter Page (Court Year).
-- Statutes (Rule 12): Name, Code § Section (Year).
-- Government docs (Rule 14): Author/Agency, Title, Doc info (Date), URL.
-- Books (Rule 15): Author, Title page (ed. Year).
-- Patents (Rule 14.8): Inventor(s), Title, U.S. Patent No. X,XXX,XXX (filed Date, issued Date).
+- Internet/websites (Rule 18.2): Author (if any), [[I]]Title[[/I]], Site Name, URL (last visited ${today}).
+- News articles (Rule 16.6): Author, [[I]]Title[[/I]], Newspaper, Date, URL.
+- Law review articles (Rule 16): Author, [[I]]Title[[/I]] or [[SC]]Author[[/SC]], title, Volume Abbrev. Journal Page (Year).
+- Court cases (Rule 10): [[I]]Case Name[[/I]], Volume Reporter Page (Court Year).
+- Statutes (Rule 12): Name, Code Section (Year).
+- Government docs (Rule 14): Author/Agency, [[I]]Title[[/I]], Doc info (Date), URL.
+- Books (Rule 15): Author, [[I]]Title[[/I]] page (ed. Year). [Whitepages: [[SC]]Author, Title[[/SC]] page]
+- Patents (Rule 14.8): Inventor(s), [[I]]Title[[/I]], U.S. Patent No. X,XXX,XXX (filed Date, issued Date).
 
-Today's date for "last visited": ${today}.
+Use [[I]]text[[/I]] to mark italic text.
+Use [[SC]]text[[/SC]] to mark small caps text (whitepages only).
+
+Today's date: ${today}.
 Use web_search to find the page title, author, publication name, and date.
 
-Respond ONLY with valid JSON (no markdown fences):
+Respond ONLY with valid JSON (no markdown fences, no extra text):
 {
-  "citation": "complete ready-to-use citation in the requested format",
-  "citation_brief": "version formatted for court briefs",
-  "citation_journal": "version formatted for law review footnotes",
-  "citation_general": "clean general-purpose version",
+  "citation_general": "general citation with [[I]] and [[SC]] markers",
+  "citation_brief": "court brief citation with [[I]] and [[SC]] markers",
+  "citation_journal": "law review citation with [[I]] and [[SC]] markers",
   "type": "source type label",
   "rule": "Rule X.X",
-  "fields": { "author": "...", "title": "...", "source": "...", "date": "...", "url": "..." },
+  "fields": {
+    "author": "...",
+    "title": "...",
+    "source": "...",
+    "date": "...",
+    "url": "..."
+  },
   "notes": "any caveats or fields to verify",
   "confidence": "high|medium|low"
 }`;
 
-        console.log(`[${new Date().toLocaleTimeString()}] Citing (${citationFormat}): ${url}`);
+        console.log(`[${new Date().toLocaleTimeString()}] Citing (${pages}, ${citationFormat}): ${url}`);
 
         const result = await callAnthropicAPI({
           model: 'claude-sonnet-4-20250514',
@@ -117,7 +140,7 @@ Respond ONLY with valid JSON (no markdown fences):
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
           messages: [{
             role: 'user',
-            content: `Generate a Bluebook citation for: ${url}\n${typeHint}\nUse web_search to find the title, author, date, and publication name. Return all three citation format variants.`
+            content: `Generate a Bluebook citation for: ${url}\n${typeHint}\nUse web_search to find the title, author, date, and publication name. Apply [[I]] and [[SC]] markers exactly as instructed.`
           }]
         });
 
@@ -148,7 +171,7 @@ Respond ONLY with valid JSON (no markdown fences):
 });
 
 server.listen(PORT, () => {
-  console.log(`\n✅  Bluebook Citation Generator running at http://localhost:${PORT}`);
+  console.log(`\n Bluebook Citation Generator running at http://localhost:${PORT}`);
   console.log('   Open that URL in your browser.');
   console.log('   Press Ctrl+C to stop.\n');
 });
