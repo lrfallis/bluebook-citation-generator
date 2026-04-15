@@ -188,4 +188,78 @@ CRITICAL FORMATTING RULES — NEVER VIOLATE:
 7. Apply markers to the exact text only — do not include surrounding punctuation like commas or periods inside the markers
 ════════════════════════════════════════
 
-To
+Today's date: ${today}
+Use web_search to look up: title, author, publication name, date published.
+
+Respond ONLY with this exact JSON structure (no markdown fences):
+{
+  "citation_general": "citation with [[I]] and [[SC]] markers",
+  "citation_brief": "citation with [[I]] and [[SC]] markers",
+  "citation_journal": "citation with [[I]] and [[SC]] markers",
+  "type": "source type (e.g. Law review article, Court case, Internet source)",
+  "rule": "Rule X.X",
+  "fields": {
+    "author": "...",
+    "title": "...",
+    "source": "...",
+    "date": "...",
+    "url": "..."
+  },
+  "notes": "any fields that could not be verified or need manual checking",
+  "confidence": "high|medium|low"
+}`;
+
+        console.log(`[${new Date().toLocaleTimeString()}] Citing (${pages}, ${citationFormat}): ${url}`);
+
+        const result = await callAnthropicAPI({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1500,
+          system,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{
+            role: 'user',
+            content: `Generate a Bluebook citation for this URL: ${url}
+${typeHint}
+
+Steps:
+1. Use web_search to find the author, title, publication name, and date
+2. Identify the source type (law review article, case, book, internet source, etc.)
+3. Apply the correct Bluebook rule for the selected pages (${isWhitepages ? 'Whitepages' : 'Bluepages'})
+4. Apply [[I]] and [[SC]] markers exactly as specified in the rules above
+5. Return all three citation format variants in the JSON
+
+DOUBLE CHECK before responding: Have you applied [[I]] to article/book/website titles? Have you applied [[SC]] to author names only if Whitepages? Is the case name (if any) wrapped in [[I]]?`
+          }]
+        });
+
+        if (result.status !== 200) throw new Error(result.body?.error?.message || `API error ${result.status}`);
+
+        const text = (result.body.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+        if (!text) throw new Error('No response from API. Check your API key.');
+
+        const match = text.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error('Could not parse citation from response.');
+
+        const parsed = JSON.parse(match[0]);
+        console.log(`[${new Date().toLocaleTimeString()}] Done: ${parsed.type} (${parsed.confidence})`);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(parsed));
+
+      } catch (err) {
+        console.error(`Error: ${err.message}`);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message || 'Server error' }));
+      }
+    });
+    return;
+  }
+
+  res.writeHead(404); res.end('Not found');
+});
+
+server.listen(PORT, () => {
+  console.log(`\nBluebook Citation Generator running at http://localhost:${PORT}`);
+  console.log('   Open that URL in your browser.');
+  console.log('   Press Ctrl+C to stop.\n');
+});
